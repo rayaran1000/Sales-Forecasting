@@ -20,7 +20,6 @@ from src.exception import CustomException
 from src.logger import logging
 
 from src.utils import save_object
-from src.utils import evaluate_model
 
 
 @dataclass
@@ -33,7 +32,7 @@ class ModelTrainer:
 
 
     def initiate_model_trainer(self,train_array,test_array):
-          try:
+        try:
             
             logging.info("Splitting Training and Test Input data") # Splitting the data into train and test 
             
@@ -62,9 +61,9 @@ class ModelTrainer:
 
             }
             
-            params={ # Creating a dictionary with the parameters for each Model
+            params = { # Creating a dictionary with the parameters for each Model
                 "Decision Tree Regressor": {
-                    'criterion':['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+                    'criterion':['squared_error', 'friedman_mse', 'absolute_error'],
                     # 'splitter':['best','random'],
                     # 'max_features':['sqrt','log2'],
                 },
@@ -121,7 +120,7 @@ class ModelTrainer:
                
             }
 
-            model_report:dict=self.evaluate_model(X_train,y_train,X_test,y_test,models=models) # This function created inside the utils.py
+            model_report:dict=self.evaluate_model(X_train, y_train, X_test , y_test, models, params) # This function created inside the utils.py
 
             #Sorting and extracting the best model using the model score
             best_model_score = max(sorted(model_report.values()))
@@ -147,36 +146,35 @@ class ModelTrainer:
                 best_model_name
             )
           
-          except Exception as e:
+        except Exception as e:
             raise CustomException(e,sys)
           
-    #Function created to evaluate the models and create a dictionary report consisting of the error values and the model names for both train and test datasets
-    def evaluate_model(X_train, y_train, X_test , y_test, models, params):
+          
+    def evaluate_model(self,X_train, y_train, X_test , y_test, models, params):
         try:
             report = {}
 
-            for model_name, model in models.items():
-                param = params[model_name]
+            for i in range(len(list(models))):
 
-                gs = GridSearchCV(model, param, cv=3)
-                gs.fit(X_train, y_train)
+                model=list(models.values())[i]
+                para = params[list(models.keys())[i]] #Extracting the parameters for each model
 
-                best_model = gs.best_estimator_
+                gs = GridSearchCV(model,para,cv=3)
+                gs.fit(X_train,y_train)
 
-                # Train the best model on the training dataset
-                best_model.fit(X_train, y_train)
+                model.set_params(**gs.best_params_) # The best parameters we get are used for the respective model
+                model.fit(X_train,y_train)  # We are training the model here with the best parameters.
+            
 
-                # Make predictions on the entire dataset
-                y_pred = best_model.predict(X_test)
+                y_train_pred = model.predict(X_train) # Predictions from the model
+                y_test_pred = model.predict(X_test)
 
-                # Calculate the ROC AUC score on the entire dataset
-                model_score = r2_score(y_test, y_pred)
+                train_model_score = r2_score(y_train,y_train_pred) # R2 scores of the training and test datasets for the models
+                test_model_score = r2_score(y_test,y_test_pred)
 
-                report[model_name] = {
-                'overall_score': model_score
-                }
+                report[list(models.keys())[i]] = (test_model_score,gs.best_params_) # Adding all the reports for each individual model in the report dictionary
 
-            return report
-    
+                return report
+   
         except Exception as e:
             raise CustomException(e,sys)

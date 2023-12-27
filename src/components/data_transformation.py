@@ -6,7 +6,6 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler # HAndling Feature Scaling
 from sklearn.preprocessing import OrdinalEncoder # Ordinal Encoding
-from sklearn.preprocessing import OneHotEncoder # One hot Encoding
 ## pipelines
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -87,57 +86,7 @@ class DataTransformation:
         
         except Exception as e:
             raise CustomException(e,sys)
-    
-    def initiate_feature_engineering(self,train_df,test_df):
-
-        try:
-
-            #Filling the missing values of Postal Code with the manually found pincode on basis on City and State
-            train_df['Postal Code'].fillna('5401',inplace=True)
-            test_df['Postal Code'].fillna('5401',inplace=True)
-
-            #Converting the Postal Code column to integer
-            train_df['Postal Code'] = train_df['Postal Code'].astype(int)
-            test_df['Postal Code'] = test_df['Postal Code'].astype(int)
-
-
-            #Outlier treatment for the target column using logarithmic transformation
-            train_df['Sales_log'] = np.log(train_df['Sales'])
-            test_df['Sales_log'] = np.log(test_df['Sales'])
-
-
-            #Dropping unnecessary columns not needed for prediction
-            unnecessery_columns = ['Customer ID' , 'Row ID' , 'Order ID' , 'Product ID' , 'Customer Name' , 'Country' , 'City' , 'State']
-
-            train_df.drop(unnecessery_columns,axis=1)
-            test_df.drop(unnecessery_columns,axis=1)
-
-            #Converting the Date-time representation columns to seperate columns
-            train_df['Order Date'] = pd.to_datetime(train_df['Order Date'], format='%d/%m/%Y') 
-            test_df['Ship Date'] = pd.to_datetime(test_df['Ship Date'], format='%d/%m/%Y')
-
-            train_df.insert(loc=6, column='order_day', value=train_df['Order Date'].dt.day)
-            train_df.insert(loc=7, column='order_month', value=train_df['Order Date'].dt.month)
-            train_df.insert(loc=8, column='order_year', value=train_df['Order Date'].dt.year)
-
-            train_df.insert(loc=9, column='ship_day', value=train_df['Ship Date'].dt.day)
-            train_df.insert(loc=10, column='ship_month', value=train_df['Ship Date'].dt.month)
-            train_df.insert(loc=11, column='ship_year', value=train_df['Ship Date'].dt.year)
-
-            test_df.insert(loc=6, column='order_day', value=test_df['Order Date'].dt.day)
-            test_df.insert(loc=7, column='order_month', value=test_df['Order Date'].dt.month)
-            test_df.insert(loc=8, column='order_year', value=test_df['Order Date'].dt.year)
-
-            test_df.insert(loc=9, column='ship_day', value=test_df['Ship Date'].dt.day)
-            test_df.insert(loc=10, column='ship_month', value=test_df['Ship Date'].dt.month)
-            test_df.insert(loc=11, column='ship_year', value=test_df['Ship Date'].dt.year)
-
-            return (
-                train_df, test_df
-            )
-
-        except Exception as e:
-            raise CustomException(e,sys)     
+        
 
     def initiate_data_transformation(self,train_data_path,test_data_path):
 
@@ -147,7 +96,7 @@ class DataTransformation:
             test_df = pd.read_csv(test_data_path)
             logging.info('Starting data transformation')
 
-            train_df,test_df = self.initiate_feature_engineering(train_df,test_df)
+            train_df,test_df = self.feature_engineering(train_df,test_df)
             preprocessor_obj = self.get_transformation_object()
 
             target_column_name = 'Sales_log'
@@ -185,3 +134,65 @@ class DataTransformation:
 
         except Exception as e:
             raise CustomException(e,sys)
+    
+    def feature_engineering(self,train_df,test_df):
+
+        try:
+
+            #Filling the missing values of Postal Code with the manually found pincode on basis on City and State
+            train_df['Postal Code'].fillna('5401',inplace=True)
+            test_df['Postal Code'].fillna('5401',inplace=True)
+
+            #Converting the Postal Code column to integer
+            train_df['Postal Code'] = train_df['Postal Code'].astype(int)
+            test_df['Postal Code'] = test_df['Postal Code'].astype(int)
+
+
+            #Outlier treatment for the target column using logarithmic transformation
+            train_df['Sales_log'] = np.log(train_df['Sales'])
+            test_df['Sales_log'] = np.log(test_df['Sales'])
+
+
+            #Dropping unnecessary columns not needed for prediction
+            unnecessery_columns = ['Customer ID' , 'Row ID' , 'Order ID' , 'Product ID' , 'Customer Name' , 'Country' , 'City' , 'State']
+
+            train_df.drop(unnecessery_columns,axis=1)
+            test_df.drop(unnecessery_columns,axis=1)
+
+            #Converting the Date-time representation columns to seperate columns
+            train_df['Order Date'] = pd.to_datetime(train_df['Order Date'], format='%d/%m/%Y') 
+            train_df['Ship Date'] = pd.to_datetime(train_df['Order Date'], format='%d/%m/%Y')
+            test_df['Order Date'] = pd.to_datetime(test_df['Ship Date'], format='%d/%m/%Y')
+            test_df['Ship Date'] = pd.to_datetime(test_df['Ship Date'], format='%d/%m/%Y')
+
+            train_df.insert(loc=6, column='order_day', value=train_df['Order Date'].dt.day)
+            train_df.insert(loc=7, column='order_month', value=train_df['Order Date'].dt.month)
+            train_df.insert(loc=8, column='order_year', value=train_df['Order Date'].dt.year)
+
+            train_df.insert(loc=9, column='ship_day', value=train_df['Ship Date'].dt.day)
+            train_df.insert(loc=10, column='ship_month', value=train_df['Ship Date'].dt.month)
+            train_df.insert(loc=11, column='ship_year', value=train_df['Ship Date'].dt.year)
+
+            test_df.insert(loc=6, column='order_day', value=test_df['Order Date'].dt.day)
+            test_df.insert(loc=7, column='order_month', value=test_df['Order Date'].dt.month)
+            test_df.insert(loc=8, column='order_year', value=test_df['Order Date'].dt.year)
+
+            test_df.insert(loc=9, column='ship_day', value=test_df['Ship Date'].dt.day)
+            test_df.insert(loc=10, column='ship_month', value=test_df['Ship Date'].dt.month)
+            test_df.insert(loc=11, column='ship_year', value=test_df['Ship Date'].dt.year)
+
+            #Dropping the original columns because they are no longer needed
+            date_cols = ['Order Date', 'Ship Date']
+
+            train_df.drop(date_cols,axis=1)
+            test_df.drop(date_cols,axis=1)
+
+            return (
+                train_df,
+                test_df
+            )
+
+        except Exception as e:
+            raise CustomException(e,sys)     
+
+    

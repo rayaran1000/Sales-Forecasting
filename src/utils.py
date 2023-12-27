@@ -4,10 +4,8 @@ import dill
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score
 
-from src.exceptions import CustomException
+from src.exception import CustomException
 
 def save_object(file_path,obj): # Used to save an object, used by us to save pickle files
     try:
