@@ -1,5 +1,5 @@
 
-# Telecom Churn Analysis
+# Sales Forecasting
 
 ### Primary objective
 Generate accurate predictions of future sales to facilitate effective business planning, inventory management, and resource allocation..
