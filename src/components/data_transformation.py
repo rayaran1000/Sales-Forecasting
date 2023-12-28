@@ -28,11 +28,7 @@ class DataTransformation:
 
             # Specifying the columns to transform as per different pipelines
             numerical_cols = ['Postal Code' , 'order_day','order_month','order_year','ship_day','ship_month','ship_year']# Numerical columns
-            categorical_cols1 = ['Ship Mode']# Categorical Columns where ordinal encoding is applied
-            categorical_cols2 = ['Segment','Region','Category','Sub-Category','Product Name'] # Categorical column where Label encoding applied earlier and scaling is applied here
-
-            # Category ranking done as per frequency for the below classes
-            ship_mode_categories = ['Standard Class' , 'Second Class' ,'First Class' ,'Same Day']
+            categorical_cols = ['Ship Mode','Segment','Region','Category','Sub-Category','Product Name']# Categorical Columns where ordinal encoding is applied
         
             # Pipeline for Numerical columns
             num_pipeline = Pipeline(
@@ -49,34 +45,22 @@ class DataTransformation:
     
                 steps=[
 
-                    ('ordinalencoder',OrdinalEncoder(categories=[ship_mode_categories])),
+                    ('ordinalencoder',OrdinalEncoder()),
                     ('scaler',StandardScaler(with_mean=False))
 
                 ]
     
             )
 
-            # Pipeline for categorical columns with One hot encoding
-            cat_pipeline2=Pipeline(
-    
-                steps=[
-
-                    ('scaler',StandardScaler(with_mean=False))
-
-                ]   
-    
-            )
-
             logging.info(f"Numerical features : {numerical_cols}")
-            logging.info(f"Categorical; features : {categorical_cols1 , categorical_cols2}")
+            logging.info(f"Categorical; features : {categorical_cols}")
 
             preprocessor = ColumnTransformer(
 
                 [
 
                 ('numerical columns',num_pipeline,numerical_cols),
-                ('categorical columns 1',cat_pipeline1,categorical_cols1),
-                ('categorical columns 2',cat_pipeline2,categorical_cols2)
+                ('categorical columns 1',cat_pipeline1,categorical_cols)
 
                 ]
 
@@ -96,7 +80,25 @@ class DataTransformation:
             test_df = pd.read_csv(test_data_path)
             logging.info('Starting data transformation')
 
+            train_df.drop('Row ID',axis=1,inplace=True)
+            test_df.drop('Row ID',axis=1,inplace=True)
+            train_sales = train_df['Sales'] 
+            test_sales = test_df['Sales']
+
+            #Dropping the Sales column because we are using this function during prediction as well, where we dont have the Sales Column
+            train_df.drop('Sales',axis=1,inplace=True)
+            test_df.drop('Sales',axis=1,inplace=True)
+            print(train_df.shape)
+            print(train_df.columns)
+
             train_df,test_df = self.feature_engineering(train_df,test_df)
+            print(train_df.columns)
+            print(train_df.shape)
+
+            #Outlier treatment for the target column using logarithmic transformation
+            train_df['Sales_log'] = np.log(train_sales)
+            test_df['Sales_log'] = np.log(test_sales)
+
             preprocessor_obj = self.get_transformation_object()
 
             target_column_name = 'Sales_log'
@@ -106,6 +108,8 @@ class DataTransformation:
 
             input_feature_test_df=test_df.drop(columns=[target_column_name],axis=1) # Creating the testing datasets for training by dropping the target column
             target_feature_test_df=test_df[target_column_name]
+            print(input_feature_train_df.columns)
+            print(input_feature_train_df.shape)
 
             logging.info("Applying preprocessing object on training dataframe and testing dataframe.")
 
@@ -147,17 +151,11 @@ class DataTransformation:
             train_df['Postal Code'] = train_df['Postal Code'].astype(int)
             test_df['Postal Code'] = test_df['Postal Code'].astype(int)
 
-
-            #Outlier treatment for the target column using logarithmic transformation
-            train_df['Sales_log'] = np.log(train_df['Sales'])
-            test_df['Sales_log'] = np.log(test_df['Sales'])
-
-
             #Dropping unnecessary columns not needed for prediction
-            unnecessery_columns = ['Customer ID' , 'Row ID' , 'Order ID' , 'Product ID' , 'Customer Name' , 'Country' , 'City' , 'State']
+            unnecessery_columns = ['Customer ID' , 'Order ID' , 'Product ID' , 'Customer Name' , 'Country' , 'City' , 'State']
 
-            train_df.drop(unnecessery_columns,axis=1)
-            test_df.drop(unnecessery_columns,axis=1)
+            train_df.drop(unnecessery_columns,axis=1,inplace=True)
+            test_df.drop(unnecessery_columns,axis=1,inplace=True)
 
             #Converting the Date-time representation columns to seperate columns
             train_df['Order Date'] = pd.to_datetime(train_df['Order Date'], format='%d/%m/%Y') 
@@ -184,8 +182,8 @@ class DataTransformation:
             #Dropping the original columns because they are no longer needed
             date_cols = ['Order Date', 'Ship Date']
 
-            train_df.drop(date_cols,axis=1)
-            test_df.drop(date_cols,axis=1)
+            train_df.drop(columns=date_cols,inplace=True)
+            test_df.drop(columns=date_cols,inplace=True)
 
             return (
                 train_df,

@@ -35,16 +35,31 @@ class DataIngestion:
 
             df = df.drop_duplicates()
 
-            cat_cols = ['Segment','Region','Category','Sub-Category','Product Name']
+            unique_categories = df['Product Name'].unique()
 
-            for columns in cat_cols:
-                label_encoder = LabelEncoder()
-                df[columns] = label_encoder.fit_transform(df[columns].values)
+            train_data = []
+            test_data = []
 
-            train_df,test_df = train_test_split(df,test_size=0.2,random_state=42)# Splitting data into train and test dataset
+            # Loop through each unique category
+            for category in unique_categories:
+                # Split the data for each category
+                category_data = df[df['Product Name'] == category]
+                if len(category_data) == 1:
+                    train_category, test_category = category_data, pd.DataFrame(columns=df.columns)
+                else:
+                    train_category, test_category = train_test_split(category_data, test_size=0.3, random_state=42)
+
+                # Append the split data to the training and testing sets
+                train_data.append(train_category)
+                test_data.append(test_category)
+
+            # Concatenate the training and testing sets
+            train_df = pd.concat(train_data, ignore_index=True)
+            test_df = pd.concat(test_data, ignore_index=True)
 
             train_df.to_csv(self.ingestion_config.train_data_path,index=False)# Moving training dataset to train.csv
             test_df.to_csv(self.ingestion_config.test_data_path,index=False)# Moving testing dataset to test.csv
+
             logging.info('Train Test Split Completed')
 
             return(
@@ -56,13 +71,3 @@ class DataIngestion:
         except Exception as e:
             raise CustomException(e,sys)
         
-
-if __name__ == '__main__':
-    data_ingestion = DataIngestion()
-    train_path,test_path = data_ingestion.initiate_data_ingestion()
-    data_transformation = DataTransformation()
-    train_array,test_array,processor_file_path = data_transformation.initiate_data_transformation(train_path,test_path)
-    model_trainer = ModelTrainer()
-    r2_square,best_model_name = model_trainer.initiate_model_trainer(train_array,test_array)
-    print(r2_square)
-    print(best_model_name)
