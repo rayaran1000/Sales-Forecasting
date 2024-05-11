@@ -4,7 +4,7 @@
 ![Screenshot 2024-01-08 162255](https://github.com/rayaran1000/Sales-Prediction/assets/122597408/da0afd38-2dff-432d-9928-46d7d571c748)
 
 ### Primary objective
-Generate accurate predictions of future sales to facilitate effective business planning, inventory management, and resource allocation..
+Generate accurate predictions of future sales to facilitate effective business planning, inventory management, and resource allocation.
 
 ### Secondary objective
 1. Identify and analyze key drivers influencing sales, including seasonality, promotions, economic factors, and external events, to enhance forecasting accuracy.
